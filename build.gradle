@@ -1,12 +1,15 @@
 plugins {
     id "java"
     id "edu.wpi.first.GradleRIO" version "2023.4.2"
+    id "maven-publish"
 }
 
 sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
 
-def ROBOT_MAIN_CLASS = "frc.robot.Main"
+group 'org.carlmontrobotics'
+
+def ROBOT_MAIN_CLASS = ""
 
 allprojects {
     repositories {
@@ -94,6 +97,18 @@ jar {
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
     manifest edu.wpi.first.gradlerio.GradleRIOPlugin.javaManifest(ROBOT_MAIN_CLASS)
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+publishing {
+    publications {
+        gpr(MavenPublication) {
+            groupId = 'org.carlmontrobotics'
+            artifactId = 'commandvisualizer'
+            version = '0.0.1'
+
+            from components.java
+        }
+    }
 }
 
 // Configure jar and deploy tasks
