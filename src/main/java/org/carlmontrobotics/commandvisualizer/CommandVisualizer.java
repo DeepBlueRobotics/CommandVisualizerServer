@@ -50,7 +50,7 @@ public class CommandVisualizer {
     public static CommandDescriptor[] getProcessedRunningCommands() {
         return runningCommands.stream().map(command -> {
             try {
-                return CommandDescriptor.fromCommandWrappingExceptions(command, true);
+                return CommandDescriptorFactory.fromCommand(command, true);
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;
