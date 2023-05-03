@@ -21,4 +21,8 @@ public class CommandDescriptor {
         return new ObjectMapper().writeValueAsString(this);
     }
 
+    public static CommandDescriptor fromJson(String json) throws JsonProcessingException {
+        return new ObjectMapper().readValue(json, CommandDescriptor.class);
+    }
+
 }
