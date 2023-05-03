@@ -10,6 +10,10 @@ public class CommandDescriptorFactory {
 
     public static final Map<Class<? extends Command>, CommandDescriber<? extends Command>> describers = new HashMap<>();
 
+    static {
+        WPILibCommandDescribers.registerAll();
+    }
+
     public static <T extends Command> void registerDescriber(Class<T> clazz, CommandDescriber<T> describer) {
         describers.put(clazz, describer);
     }

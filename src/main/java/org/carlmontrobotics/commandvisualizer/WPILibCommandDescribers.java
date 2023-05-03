@@ -222,6 +222,20 @@ public class WPILibCommandDescribers {
                         isRunning) };
     };
 
+    public static void registerAll() {
+        CommandDescriptorFactory.registerDescriber(ConditionalCommand.class, conditionalCommandDescriber);
+        CommandDescriptorFactory.registerDescriber(ParallelCommandGroup.class, parallelCommandGroupDescriber);
+        CommandDescriptorFactory.registerDescriber(ParallelDeadlineGroup.class, parallelDeadlineGroupDescriber);
+        CommandDescriptorFactory.registerDescriber(ParallelRaceGroup.class, parallelRaceGroupDescriber);
+        CommandDescriptorFactory.registerDescriber(RepeatCommand.class, repeatCommandDescriber);
+        CommandDescriptorFactory.registerDescriber(ScheduleCommand.class, scheduleCommandDescriber);
+        CommandDescriptorFactory.registerDescriber(SelectCommand.class, selectCommandDescriber);
+        CommandDescriptorFactory.registerDescriber(SequentialCommandGroup.class, sequentialCommandGroupDescriber);
+        CommandDescriptorFactory.registerDescriber(WaitCommand.class, waitCommandDescriber);
+        CommandDescriptorFactory.registerDescriber(WaitUntilCommand.class, waitUntilCommandDescriber);
+        CommandDescriptorFactory.registerDescriber(WrapperCommand.class, wrapperCommandDescriber);
+    }
+
     private static Field getPrivateField(Class<?> clazz, String name) throws NoSuchFieldException {
         Field field = clazz.getDeclaredField(name);
         field.setAccessible(true);
