@@ -72,12 +72,13 @@ public class CommandVisualizer {
                         sb.append(command.toJson());
                         sb.append(",");
                         valuesWritten = true;
-                    } catch(Exception e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
             }
-            if(valuesWritten) sb.delete(sb.length()-1, sb.length());
+            if (valuesWritten)
+                sb.delete(sb.length() - 1, sb.length());
             sb.append("]");
         }
         sb.append("}");

@@ -1,6 +1,7 @@
 package org.carlmontrobotics.commandvisualizer;
 
 import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,10 +33,8 @@ import edu.wpi.first.wpilibj2.command.WrapperCommand;
 public class CommandDescriptor {
 
     public String name, clazz;
-    public boolean isRunning, runsWhenDisabled, boolParam1;
-    public double numParam1, numParam2;
-    public String stringParam1 = "";
-    public String[] stringArrayParam1 = new String[0];
+    public boolean isRunning, runsWhenDisabled;
+    public Map<String, Object> parameters = new HashMap<>();
     public InterruptionBehavior interruptionBehavior = InterruptionBehavior.kCancelSelf;
     public CommandDescriptor[] subCommands = new CommandDescriptor[0];
     public String[] requirements = new String[0];
@@ -62,23 +61,23 @@ public class CommandDescriptor {
         descriptor.interruptionBehavior = command.getInterruptionBehavior();
         descriptor.subCommands = new CommandDescriptor[0];
         descriptor.requirements = command.getRequirements().stream().map(Object::getClass)
-                .map(clazz -> clazz.getSimpleName()).toArray(String[]::new);
+                .map(clazz -> clazz.getName()).toArray(String[]::new);
 
         if (command instanceof ConditionalCommand) {
-
-            descriptor.boolParam1 = ((BooleanSupplier) getPrivateField(ConditionalCommand.class, "m_condition")
+            boolean condition = ((BooleanSupplier) getPrivateField(ConditionalCommand.class, "m_condition")
                     .get(command)).getAsBoolean();
+            descriptor.parameters.put("condition", condition);
             descriptor.subCommands = new CommandDescriptor[2];
             descriptor.subCommands[0] = fromCommand(
                     (Command) getPrivateField(ConditionalCommand.class, "m_onTrue").get(command),
-                    isRunning && descriptor.boolParam1);
+                    isRunning && condition);
             descriptor.subCommands[1] = fromCommand(
                     (Command) getPrivateField(ConditionalCommand.class, "m_onFalse").get(command),
-                    isRunning && !descriptor.boolParam1);
+                    isRunning && !condition);
 
         } else if (command instanceof NotifierCommand) {
 
-            descriptor.numParam1 = getPrivateField(NotifierCommand.class, "m_period").getDouble(command);
+            descriptor.parameters.put("period", getPrivateField(NotifierCommand.class, "m_period").getDouble(command));
 
         } else if (command instanceof ParallelCommandGroup) {
 
@@ -146,17 +145,21 @@ public class CommandDescriptor {
 
             Object currentSelectorValue = ((Supplier<Object>) getPrivateField(SelectCommand.class, "m_selector")
                     .get(command)).get();
-            descriptor.stringParam1 = currentSelectorValue == null ? "<null>" : currentSelectorValue.toString();
+            descriptor.parameters.put("currentSelectorValue",
+                    currentSelectorValue == null ? "<null>" : currentSelectorValue.toString());
 
             Map<Object, Command> subCommands = (Map<Object, Command>) getPrivateField(SelectCommand.class, "m_commands")
                     .get(command);
 
             if (subCommands == null) {
+                descriptor.parameters.put("hasSupplier", true);
+                descriptor.parameters.put("subCommandValues", new String[0]);
                 if (isRunning)
                     descriptor.subCommands = new CommandDescriptor[] { fromCommand(
                             (Command) getPrivateField(SelectCommand.class, "m_selectedCommand").get(command), true) };
             } else {
-                descriptor.stringArrayParam1 = new String[subCommands.size()];
+                descriptor.parameters.put("hasSupplier", false);
+                String[] subCommandValues = new String[subCommands.size()];
                 descriptor.subCommands = new CommandDescriptor[subCommands.size()];
 
                 Map.Entry<Object, Command>[] entries = subCommands.entrySet().toArray(Map.Entry[]::new);
@@ -167,20 +170,22 @@ public class CommandDescriptor {
                     int arrIdx = 1;
                     for (int i = 0; i < entries.length; i++) {
                         if (entries[i].getKey() == currentSelectorValue) {
-                            descriptor.stringArrayParam1[0] = entries[i].getKey().toString();
+                            subCommandValues[0] = entries[i].getKey().toString();
                             continue;
                         }
 
-                        descriptor.stringArrayParam1[arrIdx] = entries[i].getKey().toString();
+                        subCommandValues[arrIdx] = entries[i].getKey().toString();
                         descriptor.subCommands[arrIdx] = fromCommand(entries[i].getValue(), false);
                         arrIdx++;
                     }
                 } else {
                     for (int i = 0; i < entries.length; i++) {
-                        descriptor.stringArrayParam1[i] = entries[i].getKey().toString();
+                        subCommandValues[i] = entries[i].getKey().toString();
                         descriptor.subCommands[i] = fromCommand(entries[i].getValue(), false);
                     }
                 }
+
+                descriptor.parameters.put("subCommandValues", subCommandValues);
             }
 
         } else if (command instanceof SequentialCommandGroup) {
@@ -198,13 +203,15 @@ public class CommandDescriptor {
 
         } else if (command instanceof WaitCommand) {
 
-            descriptor.numParam1 = getPrivateField(WaitCommand.class, "m_duration").getDouble(command);
-            descriptor.numParam2 = ((Timer) getPrivateField(WaitCommand.class, "m_timer").get(command)).get();
+            descriptor.parameters.put("duration", getPrivateField(WaitCommand.class, "m_duration").getDouble(command));
+            descriptor.parameters.put("timeElapsed",
+                    ((Timer) getPrivateField(WaitCommand.class, "m_timer").get(command)).get());
 
         } else if (command instanceof WaitUntilCommand) {
 
-            descriptor.boolParam1 = ((BooleanSupplier) getPrivateField(WaitUntilCommand.class, "m_condition")
-                    .get(command)).getAsBoolean();
+            descriptor.parameters.put("condition",
+                    ((BooleanSupplier) getPrivateField(WaitUntilCommand.class, "m_condition")
+                            .get(command)).getAsBoolean());
 
         } else if (command instanceof WrapperCommand) {
 
@@ -222,7 +229,7 @@ public class CommandDescriptor {
         return field;
     }
 
-    public String toJson() throws JsonProcessingException{
+    public String toJson() throws JsonProcessingException {
         return new ObjectMapper().writeValueAsString(this);
     }
 
