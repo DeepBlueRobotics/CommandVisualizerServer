@@ -7,10 +7,14 @@ import java.util.function.Consumer;
 
 import org.carlmontrobotics.lib199.Lib199Subsystem;
 
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 public class CommandVisualizer {
+
+    public static final String NT_KEY = "CommandDescriptors";
 
     private static HashSet<Consumer<String>> loggers = new HashSet<>();
     private static HashSet<Command> runningCommands = new HashSet<>();
@@ -25,6 +29,11 @@ public class CommandVisualizer {
 
     public static void registerLogger(Consumer<String> logger) {
         loggers.add(logger);
+    }
+
+    public static void registerDefaultNTLogger() {
+        NetworkTableEntry entry = NetworkTableInstance.getDefault().getEntry(NT_KEY);
+        registerLogger(entry::setString);
     }
 
     public static void logCommands() {
