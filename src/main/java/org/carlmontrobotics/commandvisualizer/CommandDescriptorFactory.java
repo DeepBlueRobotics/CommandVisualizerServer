@@ -2,6 +2,7 @@ package org.carlmontrobotics.commandvisualizer;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -9,6 +10,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 public class CommandDescriptorFactory {
 
     public static final Map<Class<? extends Command>, CommandDescriber<? extends Command>> describers = new HashMap<>();
+    public static final Map<Command, CommandDescriptor> descriptors = new WeakHashMap<>();
 
     public static <T extends Command> void registerDescriber(Class<T> clazz, CommandDescriber<T> describer) {
         describers.put(clazz, describer);
@@ -17,7 +19,13 @@ public class CommandDescriptorFactory {
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static CommandDescriptor fromCommand(Command command, boolean isRunning) throws WrapperException {
         try {
-            CommandDescriptor descriptor = new CommandDescriptor();
+            CommandDescriptor descriptor = descriptors.computeIfAbsent(command, cmd -> {
+                CommandDescriptor newDescriptor = new CommandDescriptor();
+                newDescriptor.id = System.identityHashCode(command);
+                while(descriptors.values().stream().anyMatch(d -> d.id == newDescriptor.id))
+                    newDescriptor.id++;
+                return newDescriptor;
+            });
 
             descriptor.name = command.getName();
             descriptor.clazz = command.getClass().getName();
@@ -36,7 +44,7 @@ public class CommandDescriptorFactory {
                 Class<? extends Command> clazz = command.getClass();
 
                 while(Command.class.isAssignableFrom(clazz)) { // Walk up the class hierarchy
-                    if(describers.containsKey(clazz)) {
+                    if(describers.containsKey(clazz)) { // This could be optimized
                         // Cast away the generic type
                         CommandDescriber describer = (CommandDescriber) describers.get(clazz);
                         descriptor.describer = describer.getClass().getName();

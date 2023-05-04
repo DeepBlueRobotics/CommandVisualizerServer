@@ -10,6 +10,7 @@ import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 
 public class CommandDescriptor {
 
+    public int id;
     public String name, clazz, describer;
     public boolean isRunning, runsWhenDisabled, isComposed;
     public Map<String, Object> parameters = new HashMap<>();
