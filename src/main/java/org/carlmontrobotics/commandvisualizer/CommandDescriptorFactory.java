@@ -43,7 +43,7 @@ public class CommandDescriptorFactory {
             } else {
                 Class<? extends Command> clazz = command.getClass();
 
-                while(Command.class.isAssignableFrom(clazz)) { // Walk up the class hierarchy
+                for(;;) { // Walk up the class hierarchy
                     if(describers.containsKey(clazz)) { // This could be optimized
                         // Cast away the generic type
                         CommandDescriber describer = (CommandDescriber) describers.get(clazz);
@@ -52,7 +52,9 @@ public class CommandDescriptorFactory {
                         break;
                     }
 
-                    clazz = clazz.getSuperclass().asSubclass(Command.class);
+                    if(Command.class.isAssignableFrom(clazz.getSuperclass()))
+                        clazz = clazz.getSuperclass().asSubclass(Command.class);
+                    else break;
                 }
             }
 
