@@ -7,6 +7,8 @@ import java.util.function.Consumer;
 
 import org.carlmontrobotics.lib199.Lib199Subsystem;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -39,8 +41,15 @@ public class CommandVisualizer {
     public static void logCommands() {
         if (disabled)
             return;
+        String descriptorJson;
+        try {
+            descriptorJson = new ObjectMapper().writeValueAsString(getProcessedRunningCommands());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
         for (Consumer<String> logger : loggers) {
-            logger.accept(CommandVisualizer.formatRunningCommands());
+            logger.accept(descriptorJson);
         }
     }
 
@@ -67,31 +76,6 @@ public class CommandVisualizer {
         })
                 .filter(Objects::nonNull)
                 .toArray(CommandDescriptor[]::new);
-    }
-
-    public static String formatRunningCommands() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
-        {
-            sb.append("\"commands\": [");
-            boolean valuesWritten = false;
-            {
-                for (CommandDescriptor command : getProcessedRunningCommands()) {
-                    try {
-                        sb.append(command.toJson());
-                        sb.append(",");
-                        valuesWritten = true;
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-            if (valuesWritten)
-                sb.delete(sb.length() - 1, sb.length());
-            sb.append("]");
-        }
-        sb.append("}");
-        return sb.toString();
     }
 
 }
